@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block content %}
+  <p> {{ data }} </p>
+  <h1> {{ title }}</h1>
+  <p><h7><b>Type:</b> {{ type }}</h7></p>
+  <p><h8><b>Length:</b> {{ length }}</h8>
+  <br></p>
+  <p><h6><i><b>Definition:</b> {{ definition }}</i></h6></p>
+  <hX><b>Column Found in the Following Tables:</b></hX>
+  <ol>
+  {% for table in tables %}
+    <li> {{table}} </li>
+  {% endfor %}
+  </ol>
+{% endblock content %}

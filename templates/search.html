@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block content %}
+  <div class="content-section">
+    <form method="POST" action="">
+      {{ form.hidden_tag() }}
+      <fieldset class="form-group">
+        <legend class= "border-botttom mb-4">Search</legend>
+        <div class="form-group">
+          {{ form.search(class="form-control form-control-lg") }}
+          {{ form.submit(class="btn btn-outline-info") }}
+      </fieldset>
+    </form>
+{% endblock content %}

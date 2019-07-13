@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block content %}
+  <h1>Top Search Results:</h1>
+  <ol>
+    {% for choice in choices %}
+      <li> <a href="{{ url_for('query', type =choice ) }}"> {{choice}} </a> </li>
+    {% endfor %}
+  </ol>
+{% endblock content %}
