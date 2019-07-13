@@ -17,7 +17,7 @@ import re
 def getData(selectStr):
     tempDF=pd.DataFrame()
     conn_info = {'host': '11.11.11.111',
-             'port': 5433,
+             'port': 0000,
              'user': 'username',
              'password': 'you wish!',
              'database': 'whatevz',
