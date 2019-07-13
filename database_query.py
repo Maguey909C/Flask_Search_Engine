@@ -15,6 +15,12 @@ import ssl
 import re
 
 def getData(selectStr):
+    """
+    INPUT: A SQL Query
+    OUTPUT: A dataframe from DB2
+    PURPOSE: To connect to a database and return a dataframe based on the query specified
+    """
+    
     tempDF=pd.DataFrame()
     conn_info = {'host': '11.11.11.111',
              'port': 0000,
@@ -43,7 +49,6 @@ def getData(selectStr):
     tempDF.columns=ColumnList
     connection.close()
     return tempDF
-# user_query = getData("""SELECT * as tids FROM dsl.BVALTABLE_NEW WHERE COL_NAME LIKE = '% """ +str(users_command)+"%'")
 
 def get_col(users_command):
     """
