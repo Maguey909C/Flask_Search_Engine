@@ -1,8 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
   <p> {{ data }} </p>
-  <h1> {{ title }}</h1>
-  <p><h7><b>Type:</b> {{ type }}</h7></p>
+  <h1> {{ original_col_name }}</h1>
+  <br>
+  <p><h7><b>Alternative Column Name: </b> {{ revised_col_name}}</h7></p>
+  <p><h7><b>Type:   </b> {{ type }}</h7></p>
   <p><h8><b>Length:</b> {{ length }}</h8>
   <br></p>
   <p><h6><i><b>Definition:</b> {{ definition }}</i></h6></p>
@@ -13,3 +15,4 @@
   {% endfor %}
   </ol>
 {% endblock content %}
+
