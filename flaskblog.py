@@ -28,7 +28,7 @@ def query():
 
     original_col_name = data.iloc[0,2]
     revised_col_name = data.iloc[0,3]
-    type = data.iloc[0,9]
+    dataType = data.iloc[0,9]
     length = data.iloc[0,10]
     definition = data.iloc[0, 4]
     tables = data['TABNAME']
@@ -40,7 +40,7 @@ def query():
                             revised_col_name = revised_col_name,
                             definition = definition,
                             tables = unique,
-                            type = type,
+                            type = dataType,
                             length = length)
 
 if __name__ == '__main__':
