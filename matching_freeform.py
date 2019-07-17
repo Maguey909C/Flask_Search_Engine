@@ -3,68 +3,51 @@ from fuzzywuzzy import process
 import nltk
 from nltk.corpus import stopwords
 import pandas as pd
+import numpy as np
 
-## You need to download these stopword list to your local
-#nltk.download('punkt')
-#nltk.download('stopwords')
+def lowerColumn(list_of_strings):
+    """
+    INPUT: A list of strings
+    OUTPUT: Same list with strings lower case
+    """
+    return list(map(str.lower, list_of_strings))
 
-#Spot Check that you have a list of stop words
-basic_list = list(stopwords.words('english'))
-#basic_list = ['contains', 'contain', 'table', 'tables', 'can', 'find', 'does', 'column', 'what', 'the']
+def removePunctuation(list_of_strings):
+    """
+    INPUT: A list of strings
+    OUTPUT: Same list but with punctuation removed
+    """
 
+    return  list(map(lambda s: s.replace("_"," ").replace(".","").replace("?","").strip(), list_of_strings))
 
-def get_column_names(df):
+def getUniqueDf(df, colname):
     """
     INPUT: A dataframe
     OUTPUT: List of list of cleaned column names
     PURPOSE: To get a list of column names split
     """
     #Fill in blanks
-    df = df.fillna(method='ffill')
+    df = df.fillna("UNKNOWN")
 
-    #lower a list
-    df.columns = list(map(str.lower, df.columns))
+    #Dropping duplicate revised names
+    unique_df = df.drop_duplicates(subset='revised column name', keep='first')
 
-    map(lambda s: s.replace("_"," ").replace(".","").replace("?","").strip(),df['revised_column_name'])
+    #Take Uniques, remove punctuation, lower them
+    all_names = list(unique_df['revised column name'])
+    all_names = removePunctuation(all_names)
+    all_names = lowerColumn(all_names)
+    unique_df['cleaned col names']= all_names
 
-    new = df.drop_duplicates(subset='revised_column_name', keep='first')
+    #Do stuff with definition
+    clean_def = lowerColumn(list(unique_df['definition']))
+    clean_def = removePunctuation(clean_def)
+    unique_df['cleaned definitions'] = clean_def
 
-    #For the moment just take the set since this column is still being filled out with names
-    a = list(new['revised_column_name'])
-
-    #Strips out _ character
-    #a = list(map(lambda s: s.replace("_"," ").replace(".","").replace("?","").strip(), a))
-
-    #Lowers Column information
-    return list(map(str.lower, a))
-
-
-def get_defs(df):
-
-    df = df.fillna(method='ffill')
-
-    #lower a list
-    df.columns = list(map(str.lower, df.columns))
-
-    map(lambda s: s.replace("_"," ").replace(".","").replace("?","").strip(),df['revised_column_name'])
-
-    new = df.drop_duplicates(subset='revised_column_name', keep='first')
-
-    #For the moment just take the set since this column is still being filled out with names
-
-    a = list(new['definition'])
-
-    #Strips out _ character
-    #a = list(map(lambda s: s.replace("_"," ").replace(".","").replace("?","").strip(), a))
-
-    #Lowers Column information
-    return list(map(str.lower, a))
-
-
+    return unique_df
 
 def add_stopword(stopword_list, new_words_to_add):
     """
-    INPUT:Old stop word list, list of new words
+    INPUT: Old stop word list, list of new words
     OUTPUT: Revised list of new stop words
     PURPOSE: To take into account increasing vocabulary that may or may not be relevant for finding material
     """
@@ -74,7 +57,7 @@ def add_stopword(stopword_list, new_words_to_add):
     return stopword_list
 
 
-def getidea(userinput, stwords):
+def getIdea(userinput, stwords):
     from nltk.corpus import stopwords
     """
     INPUT: A string based on user input to the search box
@@ -91,11 +74,17 @@ def getidea(userinput, stwords):
     return revised_set
 
 
-def getdefideas(def_lst, stwords):
+def getDefIdeas(list_of_definitions, stwords):
+    """
+    INPUT:
+    OUTPUT:
+    PURPOSE:
+    """
     condensed_defs = list()
 
-    for definition in def_lst:
+    for definition in list_of_definitions:
         sep_def = list(definition.split())
+
         condensed_def = []
         for word in sep_def:
             if word not in set(stwords):
@@ -104,97 +93,111 @@ def getdefideas(def_lst, stwords):
         condensed_defs.append(concat_def)
     return condensed_defs
 
-
-
-def getcolfuzzymatch(user_question, new_stopwords, clean_col_names):
+def getColFuzzyMatch(userInput, new_stopwords, clean_col_names):
     """
-    INPUT:
-    OUTPUT:
-    PURPOSE:
+    INPUT: User's input, the stopwords, and the column names to compare
+    OUTPUT: A list of all the fuzzy match scores based on the user's input
+    PURPOSE: To generate all possible scores for the fuzzy match based on the user's input
     """
-    user_idea = getidea(user_question, new_stopwords)
+    user_idea = getIdea(userInput, new_stopwords)
     concat_user_idea = " ".join(user_idea)
 
-    dictionary = {}
+    col_values = []
     for col in clean_col_names:
         name_ratio = fuzz.ratio(user_idea, col)
-        dictionary[col] = name_ratio
+        col_values.append(name_ratio)
 
-    return dictionary
+    return col_values
 
-def getdeffuzzymatch(user_question, new_stopwords, clean_defs):
-    user_idea = getidea(user_question, new_stopwords)
-    concat_user_idea = " ".join(user_idea)
-
-    lst = list()
-    for definition in clean_defs:
-        def_ratio = fuzz.ratio(user_idea, definition)
-        lst.append(def_ratio)
-
-    return lst
-
-def scoretable(dictionary, lst):
-    score_table = pd.DataFrame(list(dictionary.items()), columns=["colName", "colNameScore"])
-
-    score_table.insert(2, "defScore", lst, True)
-    return score_table
-
-def get_composite_scores(df):
-    comp_scores = list()
-
-    for row in df.itertuples():
-        composite_score = (0.7 * row.colNameScore) + (0.3 * row.defScore)
-        comp_scores.append(composite_score)
-
-    df.insert(3,"compScore", comp_scores, True)
-
-    final = df[['colName', 'compScore']]
-
-    dictionary = pd.Series(final.compScore.values,index=final.colName).to_dict()
-
-    return dictionary
-
-
-
-def get_best_matches(dictionary, threshold=30):
-    """
-    INPUT: A dictionary and a threshold for the fuzzy match
-    OUTPUT: Sorting a dictionary based on values which pass the fuzzy match threshold
-    PURPOSE: To sort a dictionary based on the values contained
-    """
-    new_dict = {}
-    for key, value in sorted(dictionary.items(), key=lambda item: (item[1], item[0])):
-        if value > threshold:
-            new_dict[key] = value
-
-    #Without specifying -1 and turning it into a list new_dic will generate multiple possible
-    #combinations of column names for the user based on their request.
-    #For now it is taking the max, or last score in the list since it is ordered ordered dictionary
-    top_5 = list(new_dict)[-5:]
-    top_5_upper = []
-    for name in top_5:
-        up = name.upper()
-        top_5_upper.insert(0,up)
-    return top_5_upper
-
-def get_rows(name):
+def getDefFuzzyMatch(userInput, new_stopwords, clean_defs):
     """
     INPUT:
     OUTPUT:
     PURPOSE:
     """
-    df = pd.read_csv(r'C:/Users/zhangje/Desktop/updated_bval.csv', encoding = 'unicode_escape')
-    return df[df['Revised_Column_Name']==str(name)]
+    user_idea = getIdea(userInput, new_stopwords)
+    concat_user_idea = " ".join(user_idea)
+
+    def_list = []
+    for definition in clean_defs:
+        def_ratio = fuzz.ratio(user_idea, definition)
+        def_list.append(def_ratio)
+
+    return def_list
+
+def finalDF(df, col_fuzzy_scores, def_fuzzy_scores):
+    """
+    INPUT: A dataframe, all associated column fuzzy scores, all associated def fuzzy scores
+    OUTPUT: A dataframe with the additional col, def, and composite columns
+    PURPOSE: To have a consolidated dataframe of all the relative information so that scores can be calculated
+    """
+    df['col fuzzy scores'] = col_fuzzy_scores
+    df['def fuzzy scores'] = def_fuzzy_scores
+    df['composite scores'] = (np.asarray(df['col fuzzy scores'])*0.7) + (np.asarray(df['def fuzzy scores'])*0.3)
+
+    return df
 
 
-def top5(searchterm):
-    df2 = pd.read_csv(r'C:/Users/zhangje/Desktop/updated_bval.csv', encoding = 'unicode_escape')
-    clean_col_names = get_column_names(df2)
-    clean_defs = get_defs(df2)
-    col_dictionary = getcolfuzzymatch(searchterm, basic_list, clean_col_names)
-    condensed = getdefideas(clean_defs, basic_list)
-    def_list = getdeffuzzymatch(searchterm, basic_list, condensed)
-    score_table = scoretable(col_dictionary, def_list)
-    scores = get_composite_scores(score_table)
-    probable_col_names = get_best_matches(scores, 10)
-    return probable_col_names
+def getBestMatches(df, threshold=30, top_how_many=10):
+    """
+    INPUT: A dataframe, a fuzzy match threshold, how many results you want to show
+    OUTPUT: A list of the top how many column names based on fuzzy match composite score
+    PURPOSE: To return the highest scores based on what the user typed into the search
+    """
+    return list(df[df['composite scores']>threshold].sort_values(by='composite scores', ascending=False).head(top_how_many)['revised column name'])
+
+def topColumns(df, userInput, number_of_responses):
+    """
+    INPUT: A dataframe and the user's input
+    OUTPUT:
+    PURPOSE:
+    """
+
+    #Taking basic stop words
+    basic_list = list(stopwords.words('english'))
+
+    #Get the cleaned column names
+    df = getUniqueDf(df,'revised column name')
+
+    #Producing Column Fuzzy Scores for each revised column name
+    col_fuzzy_scores = getColFuzzyMatch(userInput, basic_list, df['cleaned col names'])
+
+    #Making a condensed definition
+    condensed = getDefIdeas(df['cleaned definitions'], basic_list)
+
+    #Producing definitio fuzzy scores for each def
+    def_fuzzy_scores = getDefFuzzyMatch(userInput, basic_list, condensed)
+
+    #Making the final df with all relative information
+    df = finalDF(df, col_fuzzy_scores, def_fuzzy_scores)
+
+    return getBestMatches(df , 30, number_of_responses)
+
+
+def findRow(userSelection):
+    df = pd.read_csv(r'C:/Users/CRENICK/Desktop/final_columns.csv', encoding = 'unicode_escape')
+    return df[df['Revised_Column_Name']==str(userSelection)]
+
+def optimizeSearch(userInput):
+    """
+    INPUT: A dataframe, the user's input
+    OUTPUT: Either the definition of the exact column name or a estimated column based on
+    PURPOSE: To determine whether the user is searching for a column or for simply a definition
+    """
+
+    df = pd.read_csv(r'C:/Users/CRENICK/Desktop/final_columns.csv', encoding = 'unicode_escape')
+
+    #Lowering and removing punctuation in column names
+    df.columns = lowerColumn(df.columns)
+    df.columns = removePunctuation(df.columns)
+
+    #Stripping User Input of white space
+    userInput = userInput.strip()
+    all_columns = (list(map(lambda s: s.strip(), df['colname'])))
+
+    if userInput in all_columns:
+        def_index = all_columns.index(userInput)
+        found_column = [df.iloc[def_index]['revised column name']]
+        return found_column
+    else:
+        return topColumns(df,userInput, 10)
