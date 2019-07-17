@@ -4,7 +4,7 @@ import database_query
 import matching_freeform
 app = Flask(__name__) #create app variable, set to instance of fla sk class, __name__ = name of module
 
-app.config['SECRET_KEY'] = 'e311111111111111111111111111111b'
+app.config['SECRET_KEY'] = 'e3295131b9ebfe572bc24bbf74e6137b'
 
 @app.route("/", methods = ['GET', 'POST'])
 def search():
@@ -18,15 +18,16 @@ def search():
 @app.route("/match", methods = ['GET', 'POST'])
 def match():
     searchterm = session.get('searchterm', None)
-    choices = matching_freeform.top5(searchterm)
+    choices = matching_freeform.optimizeSearch(searchterm)
     return render_template('match.html', choices = choices)
 
 @app.route("/query", methods = ['GET', 'POST'])
 def query():
     selected_choice = request.args.get('type') #https://stackoverflow.com/questions/50426137/flask-get-clicked-link-info-and-display-on-rendered-page
-    data = matching_freeform.get_rows(selected_choice)
+    data = matching_freeform.findRow(selected_choice)
 
-    name = data.iloc[0,2]
+    original_col_name = data.iloc[0,2]
+    revised_col_name = data.iloc[0,3]
     type = data.iloc[0,9]
     length = data.iloc[0,10]
     definition = data.iloc[0, 4]
@@ -34,8 +35,13 @@ def query():
 
     unique = tables.unique().tolist()
 
-    return render_template('query.html', title = name, definition = definition, tables = unique,
-                           type = type, length = length)
+    return render_template('query.html',
+                            original_col_name = original_col_name,
+                            revised_col_name = revised_col_name,
+                            definition = definition,
+                            tables = unique,
+                            type = type,
+                            length = length)
 
 if __name__ == '__main__':
     app.run(debug=True)
