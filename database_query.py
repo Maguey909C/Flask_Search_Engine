@@ -55,8 +55,6 @@ def get_col(users_command):
     INPUT: User search command
     OUTPUT: Dataframe from database based on SQL query
     """
-    # df = getData("""SELECT * FROM dsl.BVAL_DATA_DICT_POC WHERE TEAM_NM = '""" +str(users_command)+"'") #GC SHADOW
-    df = getData("""SELECT * FROM some table WHERE ColumnName = '""" +str(users_command)+"'") #GC SHADOW
-
-    #what to do when invalid column is entered in search
+    df = getData("""SELECT * FROM some table WHERE ColumnName = '""" +str(users_command)+"'")
+    
     return df
