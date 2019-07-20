@@ -2,7 +2,8 @@ from flask import Flask, render_template, url_for, flash, redirect, jsonify, ses
 from forms import SearchForm
 import database_query
 import matching_freeform
-app = Flask(__name__) #create app variable, set to instance of fla sk class, __name__ = name of module
+
+app = Flask(__name__) 
 
 app.config['SECRET_KEY'] = 'e3295131b9ebfe572bc24bbf74e6137b'
 
@@ -24,7 +25,7 @@ def match():
 @app.route("/query", methods = ['GET', 'POST'])
 def query():
     selected_choice = request.args.get('type') #https://stackoverflow.com/questions/50426137/flask-get-clicked-link-info-and-display-on-rendered-page
-    data = matching_freeform.findRow(selected_choice)
+    data = database_query.searchDatabase(selected_choice)
 
     original_col_name = data.iloc[0,2]
     revised_col_name = data.iloc[0,3]
