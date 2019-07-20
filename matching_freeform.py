@@ -173,11 +173,6 @@ def topColumns(df, userInput, number_of_responses):
 
     return getBestMatches(df , 30, number_of_responses)
 
-
-def findRow(userSelection):
-    df = pd.read_csv(r'C:/Users/CRENICK/Desktop/final_columns.csv', encoding = 'unicode_escape')
-    return df[df['Revised_Column_Name']==str(userSelection)]
-
 def optimizeSearch(userInput):
     """
     INPUT: A dataframe, the user's input
@@ -185,7 +180,7 @@ def optimizeSearch(userInput):
     PURPOSE: To determine whether the user is searching for a column or for simply a definition
     """
 
-    df = pd.read_csv(r'C:/Users/CRENICK/Desktop/final_columns.csv', encoding = 'unicode_escape')
+    df = pd.read_csv(r'C:/Users/-/-/-.csv', encoding = 'unicode_escape')
 
     #Lowering and removing punctuation in column names
     df.columns = lowerColumn(df.columns)
