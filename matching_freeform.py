@@ -4,6 +4,10 @@ import nltk
 from nltk.corpus import stopwords
 import pandas as pd
 import numpy as np
+import database_query
+from warnings import simplefilter
+
+simplefilter(action='ignore', category=FutureWarning)
 
 def lowerColumn(list_of_strings):
     """
@@ -30,10 +34,10 @@ def getUniqueDf(df, colname):
     df = df.fillna("UNKNOWN")
 
     #Dropping duplicate revised names
-    unique_df = df.drop_duplicates(subset='revised column name', keep='first')
+    unique_df = df.drop_duplicates(subset='revised columns name', keep='first')
 
     #Take Uniques, remove punctuation, lower them
-    all_names = list(unique_df['revised column name'])
+    all_names = list(unique_df['revised columns name'])
     all_names = removePunctuation(all_names)
     all_names = lowerColumn(all_names)
     unique_df['cleaned col names']= all_names
@@ -45,18 +49,6 @@ def getUniqueDf(df, colname):
 
     return unique_df
 
-def add_stopword(stopword_list, new_words_to_add):
-    """
-    INPUT: Old stop word list, list of new words
-    OUTPUT: Revised list of new stop words
-    PURPOSE: To take into account increasing vocabulary that may or may not be relevant for finding material
-    """
-    for word in new_words_to_add:
-            stopword_list.append(word)
-
-    return stopword_list
-
-
 def getIdea(userinput, stwords):
     from nltk.corpus import stopwords
     """
@@ -65,13 +57,10 @@ def getIdea(userinput, stwords):
     PURPOSE: To narrow down a user search to basic idea
     """
     user_input = list(userinput.split())
+    idea = [word for word in user_input if word not in stwords]
 
-    revised_set = []
-    for word in user_input:
-        if word not in set(stwords):
-            revised_set.append(word)
 
-    return revised_set
+    return idea
 
 
 def getDefIdeas(list_of_definitions, stwords):
@@ -84,13 +73,10 @@ def getDefIdeas(list_of_definitions, stwords):
 
     for definition in list_of_definitions:
         sep_def = list(definition.split())
-
-        condensed_def = []
-        for word in sep_def:
-            if word not in set(stwords):
-                condensed_def.append(word)
+        condensed_def = [word for word in sep_def if word not in set(stwords)]
         concat_def = " ".join(condensed_def)
         condensed_defs.append(concat_def)
+
     return condensed_defs
 
 def getColFuzzyMatch(userInput, new_stopwords, clean_col_names):
@@ -101,11 +87,7 @@ def getColFuzzyMatch(userInput, new_stopwords, clean_col_names):
     """
     user_idea = getIdea(userInput, new_stopwords)
     concat_user_idea = " ".join(user_idea)
-
-    col_values = []
-    for col in clean_col_names:
-        name_ratio = fuzz.ratio(user_idea, col)
-        col_values.append(name_ratio)
+    col_values = [fuzz.ratio(user_idea, col) for col in clean_col_names]
 
     return col_values
 
@@ -118,12 +100,9 @@ def getDefFuzzyMatch(userInput, new_stopwords, clean_defs):
     user_idea = getIdea(userInput, new_stopwords)
     concat_user_idea = " ".join(user_idea)
 
-    def_list = []
-    for definition in clean_defs:
-        def_ratio = fuzz.ratio(user_idea, definition)
-        def_list.append(def_ratio)
+    def_values = [fuzz.ratio(user_idea, definition) for definition in clean_defs]
 
-    return def_list
+    return def_values
 
 def finalDF(df, col_fuzzy_scores, def_fuzzy_scores):
     """
@@ -144,7 +123,7 @@ def getBestMatches(df, threshold=30, top_how_many=10):
     OUTPUT: A list of the top how many column names based on fuzzy match composite score
     PURPOSE: To return the highest scores based on what the user typed into the search
     """
-    return list(df[df['composite scores']>threshold].sort_values(by='composite scores', ascending=False).head(top_how_many)['revised column name'])
+    return list(df[df['composite scores']>threshold].sort_values(by='composite scores', ascending=False).head(top_how_many)['revised columns name'])
 
 def topColumns(df, userInput, number_of_responses):
     """
@@ -173,18 +152,28 @@ def topColumns(df, userInput, number_of_responses):
 
     return getBestMatches(df , 30, number_of_responses)
 
+
+def findRow(userSelection):
+    """
+    INPUT: What the user selected from the available options
+    OUTPUT: A dataframe which will be parsed for the webpage
+    PURPOSE: To find the exact row that the user has selected
+    """
+    df = database_query.searchDataFrame()
+    return df[df['Revised_Columns_Name']==str(userSelection)]
+
 def optimizeSearch(userInput):
     """
     INPUT: A dataframe, the user's input
     OUTPUT: Either the definition of the exact column name or a estimated column based on
     PURPOSE: To determine whether the user is searching for a column or for simply a definition
     """
-
-    df = pd.read_csv(r'C:/Users/-/-/-.csv', encoding = 'unicode_escape')
+    df = database_query.searchDataFrame()
 
     #Lowering and removing punctuation in column names
     df.columns = lowerColumn(df.columns)
     df.columns = removePunctuation(df.columns)
+    # userInput = userInput.lower()
 
     #Stripping User Input of white space
     userInput = userInput.strip()
@@ -192,7 +181,7 @@ def optimizeSearch(userInput):
 
     if userInput in all_columns:
         def_index = all_columns.index(userInput)
-        found_column = [df.iloc[def_index]['revised column name']]
+        found_column = [df.iloc[def_index]['revised columns name']]
         return found_column
     else:
         return topColumns(df,userInput, 10)
