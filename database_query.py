@@ -1,8 +1,8 @@
-Author: Chase Renick
-Date: 7/2019
-Purpose: Functions to call database to perform query
+#Author: Chase Renick
+#Date: 7/2019
+#Purpose: Functions to call database to perform query
 
-//Importing Packages
+#Importing Packages
 import pandas as pd
 import numpy as np
 from collections import Counter
@@ -14,6 +14,7 @@ import sys
 import ssl
 import re
 
+#Main Connection and Query tool
 def getData(selectStr):
     """
     INPUT: A SQL Query
@@ -50,11 +51,10 @@ def getData(selectStr):
     connection.close()
     return tempDF
 
-def get_col(users_command):
+#Function to get your specific table
+def searchDataFrame():
     """
     INPUT: User search command
     OUTPUT: Dataframe from database based on SQL query
     """
-    df = getData("""SELECT * FROM some table WHERE ColumnName = '""" +str(users_command)+"'")
-    
-    return df
+    return getData("""SELECT * FROM schema.table_name""")
